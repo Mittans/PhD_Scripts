@@ -18,25 +18,25 @@ done
 mkdir -p -- 'Experiment-'$start_index_str
 cd 'Experiment-'$start_index_str
 #Use wget2 to get newest Reddit submission in JSON format. Use wget2 because regular wget has https problems and gets a 403 error
-#Dump it to Showerthoughts.json
-wget2 -O Showerthoughts.json "https://www.reddit.com/r/Showerthoughts/new/.json"
+#Dump it to Askreddit.json
+wget2 -O Askreddit.json "https://www.reddit.com/r/Askreddit/new/.json"
 #Use jq library to parse json data. Make sure you have the dependency installed. eg. apt install jq
 #jq itself is written in C and has no runtime dependencies https://github.com/jqlang/jq
 #jq replaces some dreadful regex
-cat Showerthoughts.json | jq -r '.data.children[].data.permalink' > "Showerthoughts-Newest-0"
-#Use sed to prefix Reddit url to the permalink field (i.e. turn /r/Showerthoughts/comments/... into https://www.reddit.com/r/Showerthoughts/comments/...
+cat Askreddit.json | jq -r '.data.children[].data.permalink' > "Askreddit-Newest-0"
+#Use sed to prefix Reddit url to the permalink field (i.e. turn /r/Askreddit/comments/... into https://www.reddit.com/r/Askreddit/comments/...
 #We need the full url to feed to the upvoting service
-sed -i -e 's/^/https:\/\/www.reddit.com/' "Showerthoughts-Newest-0"
+sed -i -e 's/^/https:\/\/www.reddit.com/' "Askreddit-Newest-0"
 #Now, grab top 20 most recent threads from the list
 #Pipe
 #Randomise the order of the 20 submission links
 #Pipe
-#Split the randomised list into 10 line chunks. Read from '-' or Stdin, use 'Showerthoughts' prefix and decimal (-d) suffixes
-#Will produce two files, Showerthoughts00, Showerthoughts01
-head -n 20 Showerthoughts-Newest-0 | shuf -n 20 | split -l 10 -d - 'Showerthoughts'
+#Split the randomised list into 10 line chunks. Read from '-' or Stdin, use 'Askreddit' prefix and decimal (-d) suffixes
+#Will produce two files, Askreddit00, Askreddit01
+head -n 20 Askreddit-Newest-0 | shuf -n 20 | split -l 10 -d - 'Askreddit'
 #Rename them to Control and Boosted
-mv 'Showerthoughts00' 'Showerthoughts-Newest-Control'
-mv 'Showerthoughts01' 'Showerthoughts-Newest-Boosted'
+mv 'Askreddit00' 'Askreddit-Newest-Control'
+mv 'Askreddit01' 'Askreddit-Newest-Boosted'
 #Copy in the other scripts from the ../pwd directory. We'll need these to setup crontab and schedule the scrapes
 #Make sure all the files are chmod +X'd before copying them around
 cp "../2HourlyScrape.sh" "./2HourlyScrape.sh"
@@ -64,8 +64,8 @@ while read -r line
 do
 	curl -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN_ENV_VAR" -d "{'link':$line, 'type': 1, 'vote': 10, 'after': 0, 'speed': 10}" -X POST "https://upvote.club/api/order/create"
 	echo "Sent off $line to upvote service"
-done < "Showerthoughts-Newest-Boosted"
-#Now that Showerthoughts has been scraped, sorted into groups, and copied into the Experiment folder
+done < "Askreddit-Newest-Boosted"
+#Now that Askreddit has been scraped, sorted into groups, and copied into the Experiment folder
 #Do the same thing with The_Donald
 #We could do this as port of a loop to reduce copy / pasting code, but, eh, there's only 2 of 'em
 #Use wget2 to get newest Reddit submission in JSON format. Use wget2 because regular wget has https problems and gets a 403 error
@@ -100,4 +100,4 @@ do
 	curl -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN_ENV_VAR" -d "{'link':$line, 'type': 1, 'vote': 10, 'after': 0, 'speed': 10}" -X POST "https://upvote.club/api/order/create"
 	echo "Sent off $line to upvote service"
 done < "The_Donald-Newest-Boosted"
-#After upvoting Showerthoughts and The_Donald, copying the scrips, and scheduling the cronjobs, we're all done.
+#After upvoting Askreddit and The_Donald, copying the scrips, and scheduling the cronjobs, we're all done.
